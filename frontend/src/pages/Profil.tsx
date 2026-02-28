@@ -18,7 +18,7 @@ const Profil = () => {
             setParis(parisData);
             setLoading(false);
         }).catch(() => setLoading(false));
-    }, [isAuthenticated]);
+    }, [user?.utilisateurId]);
 
     const monRang = classement.findIndex(u => u.pseudo === user?.pseudo) + 1;
     const monScore = classement.find(u => u.pseudo === user?.pseudo);
@@ -27,7 +27,7 @@ const Profil = () => {
     const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${user?.pseudo}&backgroundColor=e10600&radius=50`;
 
     const parisValides = paris.filter(p => p.estValide);
-    const pariEnAttente = paris.filter(p => !p.estValide);
+    // const pariEnAttente = paris.filter(p => !p.estValide);
     const pointsTotal = monScore?.points ?? 0;
 
     const drapeaux: { [key: string]: string } = {
