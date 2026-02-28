@@ -1,0 +1,7 @@
+node_modules/
+bin/
+obj/
+.env
+mobile/src/config.ts
+mobile/node_modules/
+frontend/node_modules/

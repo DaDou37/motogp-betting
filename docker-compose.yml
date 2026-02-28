@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+
+  # Base de données PostgreSQL
+  db:
+    image: postgres:16
+    container_name: motogp_db
+    environment:
+      POSTGRES_DB: motogp
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: motogp2024
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Interface visuelle pour gérer la BDD
+  adminer:
+    image: adminer
+    container_name: motogp_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  # Backend ASP.NET Core C#
+  backend:
+    build: ./backend
+    container_name: motogp_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Database=motogp;Username=admin;Password=motogp2024
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - db
+
+  # Frontend React
+  frontend:
+    build: ./frontend
+    container_name: motogp_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
