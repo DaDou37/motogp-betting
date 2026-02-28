@@ -18,7 +18,7 @@ const Profil = () => {
             setParis(parisData);
             setLoading(false);
         }).catch(() => setLoading(false));
-    }, [user?.utilisateurId]);
+    }, [user?.utilisateurId, isAuthenticated]);
 
     const monRang = classement.findIndex(u => u.pseudo === user?.pseudo) + 1;
     const monScore = classement.find(u => u.pseudo === user?.pseudo);
