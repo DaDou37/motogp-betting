@@ -46,7 +46,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3000",
+        "https://motogp-betting-g7p1hyq7g-david-rieras-projects-8f10d636.vercel.app"
+        )
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
