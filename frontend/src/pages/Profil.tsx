@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const Profil = () => {
     const { user, isAuthenticated, logout } = useAuth();
@@ -11,8 +12,8 @@ const Profil = () => {
         if (!isAuthenticated) return; // On attend sans rediriger
 
         Promise.all([
-            fetch('http://localhost:5000/api/utilisateurs/classement').then(r => r.json()),
-            fetch(`http://localhost:5000/api/paris/utilisateur/${user?.utilisateurId}`).then(r => r.json()),
+            fetch(`${API_URL}/utilisateurs/classement`).then(r => r.json()),
+            fetch(`${API_URL}/paris/utilisateur/${user?.utilisateurId}`).then(r => r.json()),
         ]).then(([classementData, parisData]) => {
             setClassement(classementData);
             setParis(parisData);

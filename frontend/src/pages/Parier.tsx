@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const Parier = () => {
   const [grandsPrix, setGrandsPrix] = useState<any[]>([]);
@@ -17,8 +18,8 @@ const Parier = () => {
     const gpId = params.get('gp');
 
     Promise.all([
-      fetch('http://localhost:5000/api/grandsprix').then(r => r.json()),
-      fetch('http://localhost:5000/api/pilotes').then(r => r.json()),
+      fetch(`${API_URL}/grandsprix`).then(r => r.json()),
+      fetch(`${API_URL}/pilotes`).then(r => r.json()),
     ]).then(([gps, pilots]) => {
       const gpDisponibles = gps.filter((gp: any) => !gp.estTermine);
       setGrandsPrix(gpDisponibles);
@@ -89,7 +90,7 @@ const Parier = () => {
     setMessage(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/paris', {
+      const res = await fetch(`${API_URL}/paris`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,10 +104,10 @@ const Parier = () => {
           piloteP3Id: podium[2].id,
         }),
       });
-if (!res.ok) {
-  const erreur = await res.text();
-  throw new Error(erreur);
-}
+      if (!res.ok) {
+        const erreur = await res.text();
+        throw new Error(erreur);
+      }
       setMessage({ text: '🎉 Pari enregistré avec succès !', type: 'success' });
       setPodium([null, null, null]);
     } catch (err: any) {

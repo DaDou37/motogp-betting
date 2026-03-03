@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const Admin = () => {
     const { user, isAuthenticated, logout } = useAuth();
@@ -16,8 +17,8 @@ const Admin = () => {
         if (!user?.estAdmin) { window.location.href = '/'; return; }
 
         Promise.all([
-            fetch('http://localhost:5000/api/grandsprix').then(r => r.json()),
-            fetch('http://localhost:5000/api/pilotes').then(r => r.json()),
+            fetch(`${API_URL}/grandsprix`).then(r => r.json()),
+            fetch(`${API_URL}/pilotes`).then(r => r.json()),
         ]).then(([gps, pils]) => {
             setGrandsPrix(gps);
             setPilotes(pils);
@@ -55,8 +56,7 @@ const Admin = () => {
         setMessage(null);
 
         try {
-            // 1. Sauvegarder les résultats
-            const resResultats = await fetch('http://localhost:5000/api/resultats', {
+            const resResultats = await fetch(`${API_URL}/resultats`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -71,8 +71,7 @@ const Admin = () => {
             });
             if (!resResultats.ok) throw new Error(await resResultats.text());
 
-            // 2. Calculer les points
-            const resPoints = await fetch(`http://localhost:5000/api/paris/calculer/${selectedGP.id}`, {
+            const resPoints = await fetch(`${API_URL}/paris/calculer/${selectedGP.id}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${user?.token}` },
             });
@@ -82,8 +81,7 @@ const Admin = () => {
             setPodium([null, null, null]);
             setSelectedGP(null);
 
-            // Refresh des GP
-            fetch('http://localhost:5000/api/grandsprix').then(r => r.json()).then(setGrandsPrix);
+            fetch(`${API_URL}/grandsprix`).then(r => r.json()).then(setGrandsPrix);
 
         } catch (err: any) {
             setMessage({ text: err.message || 'Erreur', type: 'error' });
@@ -117,7 +115,6 @@ const Admin = () => {
             <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        @keyframes fadeUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
         .nav-link:hover { color: #e10600 !important; }
         .pilote-card:hover { border-color: #e10600 !important; transform: translateY(-2px); }
         .pilote-card { transition: all 0.2s ease; cursor: pointer; }
@@ -128,7 +125,6 @@ const Admin = () => {
         .submit-btn { transition: background 0.2s; }
       `}</style>
 
-            {/* NAVBAR */}
             <nav style={{
                 position: 'sticky', top: 0, zIndex: 100,
                 background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(10px)',
@@ -167,7 +163,6 @@ const Admin = () => {
             </nav>
 
             <div style={{ padding: '40px' }}>
-                {/* HEADER */}
                 <div style={{ marginBottom: '40px' }}>
                     <div style={{
                         display: 'inline-block', background: '#e10600', color: '#fff',
@@ -187,10 +182,7 @@ const Admin = () => {
                     <div style={{ color: '#555', letterSpacing: '3px', fontSize: '12px', textTransform: 'uppercase' }}>Chargement...</div>
                 ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '40px', alignItems: 'start' }}>
-
-                        {/* COLONNE GAUCHE */}
                         <div>
-                            {/* STEP 1 : Choisir le GP */}
                             <div style={{ marginBottom: '40px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                                     <div style={{
@@ -203,7 +195,6 @@ const Admin = () => {
                                         Choisir le Grand Prix
                                     </span>
                                 </div>
-
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {grandsPrix.map((gp: any) => (
                                         <div key={gp.id} className="gp-option"
@@ -213,14 +204,11 @@ const Admin = () => {
                                                 border: `1px solid ${selectedGP?.id === gp.id ? '#e10600' : '#1a1a1a'}`,
                                                 padding: '14px 20px',
                                                 display: 'flex', alignItems: 'center', gap: '16px',
-                                                opacity: 1,
                                             }}>
                                             <span style={{ fontSize: '24px' }}>{drapeaux[gp.pays] || '🏁'}</span>
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '16px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
-                                                    {gp.nom}
-                                                </div>
-                                                <div style={{ fontSize: '11px', color: '#555', fontFamily: "'Barlow', sans-serif" }}>{gp.circuit}</div>
+                                                <div style={{ fontSize: '16px', fontWeight: 700, textTransform: 'uppercase' }}>{gp.nom}</div>
+                                                <div style={{ fontSize: '11px', color: '#555' }}>{gp.circuit}</div>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                 {gp.estTermine && (
@@ -238,7 +226,6 @@ const Admin = () => {
                                 </div>
                             </div>
 
-                            {/* STEP 2 : Sélectionner les pilotes */}
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                                     <div style={{
@@ -252,13 +239,11 @@ const Admin = () => {
                                     </span>
                                     <span style={{ color: '#555', fontSize: '12px' }}>({pilotesEnPodium.length}/3)</span>
                                 </div>
-
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '8px' }}>
                                     {pilotes.map((pilote: any) => {
                                         const enPodium = pilotesEnPodium.includes(pilote.id);
                                         const position = podium.findIndex(p => p?.id === pilote.id);
                                         const teamColor = couleurEquipe[pilote.equipe] || '#e10600';
-
                                         return (
                                             <div key={pilote.id}
                                                 className={`pilote-card ${enPodium ? 'pilote-selected' : ''}`}
@@ -282,9 +267,7 @@ const Admin = () => {
                                                     #{pilote.numero}
                                                 </div>
                                                 <div style={{ fontSize: '11px', color: '#888' }}>{pilote.prenom}</div>
-                                                <div style={{ fontSize: '16px', fontWeight: 900, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
-                                                    {pilote.nom}
-                                                </div>
+                                                <div style={{ fontSize: '16px', fontWeight: 900, textTransform: 'uppercase' }}>{pilote.nom}</div>
                                             </div>
                                         );
                                     })}
@@ -292,7 +275,6 @@ const Admin = () => {
                             </div>
                         </div>
 
-                        {/* COLONNE DROITE : RÉSUMÉ */}
                         <div style={{ position: 'sticky', top: '84px' }}>
                             <div style={{
                                 background: '#0f0f0f', border: '1px solid #1a1a1a',
@@ -305,7 +287,7 @@ const Admin = () => {
                                     {selectedGP ? (
                                         <div>
                                             <div style={{ fontSize: '20px' }}>{drapeaux[selectedGP.pays] || '🏁'}</div>
-                                            <div style={{ fontSize: '18px', fontWeight: 800, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
+                                            <div style={{ fontSize: '18px', fontWeight: 800, textTransform: 'uppercase' }}>
                                                 {selectedGP.nom.replace(/Grand Prix of |Grand Prix du |Grand Prix de /i, '')}
                                             </div>
                                         </div>
@@ -314,24 +296,20 @@ const Admin = () => {
                                     )}
                                 </div>
 
-                                {/* Podium résumé */}
                                 <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {[0, 1, 2].map(pos => (
                                         <div key={pos} style={{
                                             display: 'flex', alignItems: 'center', gap: '16px',
-                                            padding: '12px 16px',
-                                            background: '#0a0a0a',
+                                            padding: '12px 16px', background: '#0a0a0a',
                                             border: `1px solid ${podium[pos] ? podiumColors[pos] + '44' : '#1a1a1a'}`,
                                             borderLeft: `3px solid ${podium[pos] ? podiumColors[pos] : '#1a1a1a'}`,
                                         }}>
-                                            <span style={{ fontSize: '20px', fontWeight: 900, color: podiumColors[pos], fontFamily: "'Barlow Condensed', sans-serif", minWidth: '30px' }}>
+                                            <span style={{ fontSize: '20px', fontWeight: 900, color: podiumColors[pos], minWidth: '30px' }}>
                                                 {podiumLabels[pos]}
                                             </span>
                                             {podium[pos] ? (
                                                 <div>
-                                                    <div style={{ fontSize: '16px', fontWeight: 700, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
-                                                        {podium[pos].nom}
-                                                    </div>
+                                                    <div style={{ fontSize: '16px', fontWeight: 700, textTransform: 'uppercase' }}>{podium[pos].nom}</div>
                                                     <div style={{ fontSize: '11px', color: '#555' }}>#{podium[pos].numero} · {podium[pos].prenom}</div>
                                                 </div>
                                             ) : (
@@ -341,14 +319,13 @@ const Admin = () => {
                                     ))}
                                 </div>
 
-                                {/* Message */}
                                 {message && (
                                     <div style={{
                                         padding: '12px 16px', marginBottom: '16px',
                                         background: message.type === 'error' ? 'rgba(225,6,0,0.1)' : 'rgba(0,200,100,0.1)',
                                         border: `1px solid ${message.type === 'error' ? '#e10600' : '#00c864'}`,
                                         color: message.type === 'error' ? '#e10600' : '#00c864',
-                                        fontSize: '13px', fontFamily: "'Barlow', sans-serif",
+                                        fontSize: '13px',
                                     }}>
                                         {message.text}
                                     </div>
@@ -361,13 +338,12 @@ const Admin = () => {
                                     textTransform: 'uppercase', fontWeight: 900,
                                     cursor: submitting ? 'not-allowed' : 'pointer',
                                     opacity: submitting ? 0.7 : 1,
-                                    fontFamily: "'Barlow Condensed', sans-serif",
                                     clipPath: 'polygon(0 0, 97% 0, 100% 100%, 3% 100%)',
                                 }}>
                                     {submitting ? 'Enregistrement...' : '✅ Valider les résultats'}
                                 </button>
 
-                                <div style={{ marginTop: '16px', fontSize: '11px', color: '#444', textAlign: 'center', fontFamily: "'Barlow', sans-serif" }}>
+                                <div style={{ marginTop: '16px', fontSize: '11px', color: '#444', textAlign: 'center' }}>
                                     Cette action marquera le GP comme terminé et calculera les points de tous les parieurs.
                                 </div>
                             </div>
@@ -378,5 +354,3 @@ const Admin = () => {
         </div>
     );
 };
-
-export default Admin;

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const Pilotes = () => {
     const [pilotes, setPilotes] = useState<any[]>([]);
@@ -9,7 +10,7 @@ const Pilotes = () => {
     const { user, isAuthenticated, logout } = useAuth();
 
     useEffect(() => {
-        fetch('http://localhost:5000/api/pilotes')
+        fetch(`${API_URL}/pilotes`)
             .then(res => res.json())
             .then(data => { setPilotes(data); setLoading(false); })
             .catch(() => setLoading(false));

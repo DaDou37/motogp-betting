@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const Classement = () => {
   const [classement, setClassement] = useState<any[]>([]);
@@ -7,7 +8,7 @@ const Classement = () => {
   const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/utilisateurs/classement')
+    fetch(`${API_URL}/utilisateurs/classement`)
       .then(res => res.json())
       .then(data => { setClassement(data); setLoading(false); })
       .catch(() => setLoading(false));

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const GrandsPrix = () => {
   const [grandsPrix, setGrandsPrix] = useState<any[]>([]);
@@ -8,7 +9,7 @@ const GrandsPrix = () => {
   const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/grandsprix')
+    fetch(`${API_URL}/grandsprix`)
       .then(res => res.json())
       .then(data => { setGrandsPrix(data); setLoading(false); })
       .catch(() => setLoading(false));

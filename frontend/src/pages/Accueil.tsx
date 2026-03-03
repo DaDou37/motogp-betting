@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const Accueil = () => {
   const [grandsPrix, setGrandsPrix] = useState<any[]>([]);
@@ -8,14 +9,14 @@ const Accueil = () => {
 
   const { user, isAuthenticated, logout } = useAuth();
 
-  useEffect(() => {
-    fetch('http://localhost:5000/api/grandsprix')
-      .then(res => res.json())
-      .then(data => {
-        setGrandsPrix(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+useEffect(() => {
+  fetch(`${API_URL}/grandsprix`)
+    .then(res => res.json())
+    .then(data => {
+      setGrandsPrix(data);
+      setLoading(false);
+    })
+    .catch(() => setLoading(false));
 
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
