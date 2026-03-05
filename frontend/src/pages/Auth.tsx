@@ -13,50 +13,54 @@ const Auth = ({ onLogin }: { onLogin?: (user: any) => void }) => {
 
     const { login } = useAuth();
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setMessage(null);
-        try {
-            const res = await fetch(`${API_URL}/utilisateurs/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: loginForm.email, motDePasse: loginForm.motDePasse }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data);
-            login(data);
-            setMessage({ text: 'Connexion réussie ! Redirection...', type: 'success' });
-            setTimeout(() => window.location.href = '/', 1000);
-        } catch (err: any) {
-            setMessage({ text: err.message || 'Erreur de connexion', type: 'error' });
-        }
-        setLoading(false);
-    };
+   const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+    try {
+        const res = await fetch(`${API_URL}/utilisateurs/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: loginForm.email, motDePasse: loginForm.motDePasse }),
+        });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { data = text; }
+        if (!res.ok) throw new Error(typeof data === 'string' ? data : JSON.stringify(data));
+        login(data);
+        setMessage({ text: 'Connexion réussie ! Redirection...', type: 'success' });
+        setTimeout(() => window.location.href = '/', 1000);
+    } catch (err: any) {
+        setMessage({ text: err.message || 'Erreur de connexion', type: 'error' });
+    }
+    setLoading(false);
+};
 
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setMessage(null);
-        if (registerForm.motDePasse !== registerForm.confirm) {
-            setMessage({ text: 'Les mots de passe ne correspondent pas.', type: 'error' });
-            return;
-        }
-        setLoading(true);
-        try {
-            const res = await fetch(`${API_URL}/utilisateurs/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pseudo: registerForm.pseudo, email: registerForm.email, motDePasse: registerForm.motDePasse }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data);
-            setMessage({ text: 'Inscription réussie ! Vous pouvez vous connecter.', type: 'success' });
-            setMode('login');
-        } catch (err: any) {
-            setMessage({ text: err.message || "Erreur lors de l'inscription", type: 'error' });
-        }
-        setLoading(false);
-    };
+const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+    if (registerForm.motDePasse !== registerForm.confirm) {
+        setMessage({ text: 'Les mots de passe ne correspondent pas.', type: 'error' });
+        return;
+    }
+    setLoading(true);
+    try {
+        const res = await fetch(`${API_URL}/utilisateurs/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pseudo: registerForm.pseudo, email: registerForm.email, motDePasse: registerForm.motDePasse }),
+        });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { data = text; }
+        if (!res.ok) throw new Error(typeof data === 'string' ? data : JSON.stringify(data));
+        setMessage({ text: 'Inscription réussie ! Vous pouvez vous connecter.', type: 'success' });
+        setMode('login');
+    } catch (err: any) {
+        setMessage({ text: err.message || "Erreur lors de l'inscription", type: 'error' });
+    }
+    setLoading(false);
+};
 
     const inputStyle: React.CSSProperties = {
         width: '100%',
