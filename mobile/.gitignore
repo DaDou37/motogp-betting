@@ -3,7 +3,7 @@
 # dependencies
 node_modules/
 .env
-src/config.ts
+
 
 # Expo
 .expo/
