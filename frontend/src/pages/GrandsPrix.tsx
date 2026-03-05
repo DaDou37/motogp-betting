@@ -76,7 +76,7 @@ const GrandsPrix = () => {
             letterSpacing: '2px', padding: '4px 12px',
             clipPath: 'polygon(0 0, 95% 0, 100% 100%, 5% 100%)',
           }}>MOTOGP</div>
-          <span style={{ color: '#888', fontSize: '13px', letterSpacing: '4px', textTransform: 'uppercase' }}>BETTING</span>
+          <span style={{ color: '#888', fontSize: '13px', letterSpacing: '4px', textTransform: 'uppercase' }}>PARIER</span>
         </a>
 
         <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
@@ -89,8 +89,7 @@ const GrandsPrix = () => {
           ))}
           {isAuthenticated ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ color: '#e10600', fontSize: '13px', fontWeight: 700, letterSpacing: '2px' }}>🏁 {user?.pseudo}</span>
-              <button onClick={logout} style={{
+              <a href="/profil" style={{ color: '#e10600', fontSize: '13px', fontWeight: 700, letterSpacing: '2px', textDecoration: 'none' }}>🏁 {user?.pseudo}</a>              <button onClick={logout} style={{
                 background: 'transparent', color: '#888',
                 border: '1px solid #333', padding: '8px 20px',
                 fontSize: '12px', letterSpacing: '2px',
