@@ -2,33 +2,52 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
 
+const couleurEquipe: { [key: string]: string } = {
+    'Ducati Lenovo Team': '#e10600',
+    'Aprilia Racing': '#00a651',
+    'Monster Energy Yamaha MotoGP': '#4444ff',
+    'Red Bull KTM Factory Racing': '#ff6600',
+    'Red Bull KTM Tech3': '#ff6600',
+    'Prima Pramac Yamaha MotoGP': '#4444ff',
+    'BK8 Gresini Racing MotoGP': '#e10600',
+    'Pertamina Enduro VR46 Racing Team': '#ffdd00',
+    'Honda HRC Castrol': '#cc0000',
+    'LCR Honda': '#cc0000',
+    'Trackhouse MotoGP Team': '#00aaff',
+};
+
+const PODIUM_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
+const PODIUM_LABELS = ['P1', 'P2', 'P3'];
+
 const Profil = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const [classement, setClassement] = useState<any[]>([]);
     const [paris, setParis] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [pariAModifier, setPariAModifier] = useState<any>(null);
+    const [pilotes, setPilotes] = useState<any[]>([]);
+    const [podiumModif, setPodiumModif] = useState<[any, any, any]>([null, null, null]);
+    const [submittingModif, setSubmittingModif] = useState(false);
+    const [messageModif, setMessageModif] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isAuthenticated) return; // On attend sans rediriger
-
+        if (!isAuthenticated) return;
         Promise.all([
             fetch(`${API_URL}/utilisateurs/classement`).then(r => r.json()),
             fetch(`${API_URL}/paris/utilisateur/${user?.utilisateurId}`).then(r => r.json()),
-        ]).then(([classementData, parisData]) => {
+            fetch(`${API_URL}/pilotes`).then(r => r.json()),
+        ]).then(([classementData, parisData, pilotesData]) => {
             setClassement(classementData);
             setParis(parisData);
+            setPilotes(pilotesData);
             setLoading(false);
         }).catch(() => setLoading(false));
     }, [user?.utilisateurId, isAuthenticated]);
 
     const monRang = classement.findIndex(u => u.pseudo === user?.pseudo) + 1;
     const monScore = classement.find(u => u.pseudo === user?.pseudo);
-
-    // Avatar DiceBear basé sur le pseudo
     const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${user?.pseudo}&backgroundColor=e10600&radius=50`;
-
     const parisValides = paris.filter(p => p.estValide);
-    // const pariEnAttente = paris.filter(p => !p.estValide);
     const pointsTotal = monScore?.points ?? 0;
 
     const drapeaux: { [key: string]: string } = {
@@ -37,6 +56,65 @@ const Profil = () => {
         'Tchéquie': '🇨🇿', 'Pays-Bas': '🇳🇱', 'Allemagne': '🇩🇪', 'Royaume-Uni': '🇬🇧',
         'Autriche': '🇦🇹', 'Japon': '🇯🇵', 'Indonésie': '🇮🇩', 'Australie': '🇦🇺',
         'Malaisie': '🇲🇾', 'Portugal': '🇵🇹',
+    };
+
+    const ouvrirModification = (pari: any) => {
+        setPariAModifier(pari);
+        setPodiumModif([pari.piloteP1, pari.piloteP2, pari.piloteP3]);
+        setMessageModif(null);
+    };
+
+    const fermerModification = () => {
+        setPariAModifier(null);
+        setPodiumModif([null, null, null]);
+        setMessageModif(null);
+    };
+
+    const togglePilote = (pilote: any) => {
+        const pos = podiumModif.findIndex(p => p?.id === pilote.id);
+        if (pos !== -1) {
+            const n = [...podiumModif] as [any, any, any];
+            n[pos] = null;
+            setPodiumModif(n);
+            return;
+        }
+        const idx = podiumModif.findIndex(p => p === null);
+        if (idx === -1) return;
+        const n = [...podiumModif] as [any, any, any];
+        n[idx] = pilote;
+        setPodiumModif(n);
+    };
+
+    const sauvegarderModification = async () => {
+        if (podiumModif.some(p => p === null)) {
+            setMessageModif('Sélectionnez les 3 pilotes du podium');
+            return;
+        }
+        setSubmittingModif(true);
+        try {
+            const res = await fetch(`${API_URL}/paris/${pariAModifier.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${user?.token}`,
+                },
+                body: JSON.stringify({
+                    utilisateurId: user?.utilisateurId,
+                    grandPrixId: pariAModifier.grandPrixId,
+                    piloteP1Id: podiumModif[0].id,
+                    piloteP2Id: podiumModif[1].id,
+                    piloteP3Id: podiumModif[2].id,
+                }),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            // Refresh paris
+            const parisData = await fetch(`${API_URL}/paris/utilisateur/${user?.utilisateurId}`).then(r => r.json());
+            setParis(parisData);
+            fermerModification();
+        } catch (err: any) {
+            setMessageModif(err.message || 'Erreur lors de la modification');
+        }
+        setSubmittingModif(false);
     };
 
     return (
@@ -52,6 +130,10 @@ const Profil = () => {
         .nav-link:hover { color: #e10600 !important; }
         .pari-card:hover { border-color: #333 !important; }
         .pari-card { transition: border-color 0.2s; }
+        .pilote-modif:hover { border-color: #e10600 !important; cursor: pointer; }
+        .pilote-modif { transition: all 0.2s; }
+        .modifier-btn:hover { background: #1a1a1a !important; border-color: #e10600 !important; color: #e10600 !important; }
+        .modifier-btn { transition: all 0.2s; }
       `}</style>
 
             {/* NAVBAR */}
@@ -89,6 +171,127 @@ const Profil = () => {
                 </div>
             </nav>
 
+            {/* MODAL MODIFICATION */}
+            {pariAModifier && (
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 200,
+                    background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '20px',
+                }}>
+                    <div style={{
+                        background: '#0f0f0f', border: '1px solid #1a1a1a',
+                        borderTop: '3px solid #e10600',
+                        width: '100%', maxWidth: '800px',
+                        maxHeight: '90vh', overflowY: 'auto',
+                        padding: '32px',
+                    }}>
+                        {/* Header modal */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <div>
+                                <div style={{ fontSize: '11px', color: '#e10600', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                    Modifier le pari
+                                </div>
+                                <div style={{ fontSize: '22px', fontWeight: 800, textTransform: 'uppercase' }}>
+                                    {pariAModifier.grandPrix?.nom?.replace(/Grand Prix of |Grand Prix du |Grand Prix de /i, '') || 'GP'}
+                                </div>
+                            </div>
+                            <button onClick={fermerModification} style={{
+                                background: 'transparent', border: '1px solid #333',
+                                color: '#888', padding: '8px 16px', cursor: 'pointer',
+                                fontSize: '12px', letterSpacing: '1px',
+                            }}>✕ Fermer</button>
+                        </div>
+
+                        {/* Podium actuel */}
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                            {[0, 1, 2].map(pos => (
+                                <div key={pos} style={{
+                                    flex: 1, background: '#0a0a0a',
+                                    border: `2px solid ${podiumModif[pos] ? PODIUM_COLORS[pos] : '#2a2a2a'}`,
+                                    padding: '16px', textAlign: 'center',
+                                    cursor: podiumModif[pos] ? 'pointer' : 'default',
+                                }} onClick={() => podiumModif[pos] && (() => {
+                                    const n = [...podiumModif] as [any, any, any];
+                                    n[pos] = null;
+                                    setPodiumModif(n);
+                                })()}>
+                                    <div style={{ fontSize: '12px', fontWeight: 900, color: PODIUM_COLORS[pos], marginBottom: '8px' }}>
+                                        {PODIUM_LABELS[pos]}
+                                    </div>
+                                    {podiumModif[pos] ? (
+                                        <>
+                                            <div style={{ fontSize: '16px', fontWeight: 800, textTransform: 'uppercase' }}>
+                                                {podiumModif[pos].nom}
+                                            </div>
+                                            <div style={{ fontSize: '10px', color: '#555', marginTop: '4px' }}>Cliquer pour retirer</div>
+                                        </>
+                                    ) : (
+                                        <div style={{ fontSize: '12px', color: '#333' }}>Vide</div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Message erreur */}
+                        {messageModif && (
+                            <div style={{
+                                padding: '12px 16px', marginBottom: '16px',
+                                background: 'rgba(225,6,0,0.1)', border: '1px solid #e10600',
+                                color: '#e10600', fontSize: '13px',
+                            }}>{messageModif}</div>
+                        )}
+
+                        {/* Liste pilotes */}
+                        <div style={{ fontSize: '10px', color: '#555', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '12px' }}>
+                            Sélectionner les pilotes
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px', marginBottom: '24px' }}>
+                            {pilotes.map((pilote: any) => {
+                                const pos = podiumModif.findIndex(p => p?.id === pilote.id);
+                                const enPodium = pos !== -1;
+                                const teamColor = couleurEquipe[pilote.equipe] || '#e10600';
+                                return (
+                                    <div key={pilote.id} className="pilote-modif"
+                                        onClick={() => togglePilote(pilote)}
+                                        style={{
+                                            background: enPodium ? '#1a0000' : '#0a0a0a',
+                                            border: `1px solid ${enPodium ? PODIUM_COLORS[pos] : '#1a1a1a'}`,
+                                            borderLeft: `3px solid ${teamColor}`,
+                                            padding: '10px 12px',
+                                            opacity: !enPodium && podiumModif.filter(Boolean).length >= 3 ? 0.3 : 1,
+                                            position: 'relative',
+                                        }}>
+                                        {enPodium && (
+                                            <div style={{
+                                                position: 'absolute', top: '6px', right: '6px',
+                                                background: PODIUM_COLORS[pos], color: '#000',
+                                                fontSize: '9px', fontWeight: 900, padding: '1px 5px',
+                                            }}>{PODIUM_LABELS[pos]}</div>
+                                        )}
+                                        <div style={{ fontSize: '11px', color: teamColor, fontWeight: 700 }}>#{pilote.numero}</div>
+                                        <div style={{ fontSize: '14px', fontWeight: 800, textTransform: 'uppercase' }}>{pilote.nom}</div>
+                                        <div style={{ fontSize: '10px', color: '#555' }}>{pilote.prenom}</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Bouton sauvegarder */}
+                        <button onClick={sauvegarderModification} disabled={submittingModif} style={{
+                            width: '100%', background: '#e10600', color: '#fff',
+                            border: 'none', padding: '16px', fontSize: '13px',
+                            letterSpacing: '3px', textTransform: 'uppercase', fontWeight: 900,
+                            cursor: submittingModif ? 'not-allowed' : 'pointer',
+                            opacity: submittingModif ? 0.7 : 1,
+                            clipPath: 'polygon(0 0, 98% 0, 100% 100%, 2% 100%)',
+                        }}>
+                            {submittingModif ? 'Sauvegarde...' : '✅ Sauvegarder les modifications'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {!isAuthenticated ? (
                 <div style={{ textAlign: 'center', padding: '120px', color: '#555', letterSpacing: '3px', fontSize: '12px', textTransform: 'uppercase' }}>
                     Chargement...
@@ -108,7 +311,6 @@ const Profil = () => {
                         display: 'flex', gap: '40px', alignItems: 'center',
                         animation: 'fadeUp 0.5s ease forwards',
                     }}>
-                        {/* Avatar */}
                         <div style={{ position: 'relative' }}>
                             <div style={{
                                 width: '120px', height: '120px',
@@ -119,16 +321,12 @@ const Profil = () => {
                                 <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%' }} />
                             </div>
                             {monRang <= 3 && monRang > 0 && (
-                                <div style={{
-                                    position: 'absolute', bottom: '-8px', right: '-8px',
-                                    fontSize: '28px',
-                                }}>
+                                <div style={{ position: 'absolute', bottom: '-8px', right: '-8px', fontSize: '28px' }}>
                                     {monRang === 1 ? '🥇' : monRang === 2 ? '🥈' : '🥉'}
                                 </div>
                             )}
                         </div>
 
-                        {/* Infos */}
                         <div style={{ flex: 1 }}>
                             <div style={{ fontSize: '11px', color: '#555', letterSpacing: '4px', textTransform: 'uppercase', marginBottom: '8px' }}>
                                 Profil joueur
@@ -142,7 +340,6 @@ const Profil = () => {
                             </div>
                         </div>
 
-                        {/* Stats rapides */}
                         <div style={{ display: 'flex', gap: '24px' }}>
                             {[
                                 { label: 'Classement', value: monRang > 0 ? `P${monRang}` : '-', color: '#e10600' },
@@ -236,8 +433,8 @@ const Profil = () => {
                                             </div>
                                         </div>
 
-                                        {/* Points */}
-                                        <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                                        {/* Points + Bouton modifier */}
+                                        <div style={{ textAlign: 'right', minWidth: '120px' }}>
                                             {pari.estValide ? (
                                                 <div>
                                                     <div style={{ fontSize: '36px', fontWeight: 900, color: '#00c864', fontFamily: "'Barlow Condensed', sans-serif", lineHeight: 1 }}>
@@ -250,7 +447,14 @@ const Profil = () => {
                                                     <div style={{ fontSize: '11px', color: '#e10600', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 700 }}>
                                                         En attente
                                                     </div>
-                                                    <div style={{ fontSize: '10px', color: '#333', marginTop: '4px' }}>Résultats à venir</div>
+                                                    <div style={{ fontSize: '10px', color: '#333', marginTop: '4px', marginBottom: '8px' }}>Résultats à venir</div>
+                                                    <button className="modifier-btn" onClick={() => ouvrirModification(pari)} style={{
+                                                        background: 'transparent', border: '1px solid #333',
+                                                        color: '#555', padding: '6px 14px',
+                                                        fontSize: '10px', letterSpacing: '2px',
+                                                        textTransform: 'uppercase', fontWeight: 700,
+                                                        cursor: 'pointer',
+                                                    }}>✏️ Modifier</button>
                                                 </div>
                                             )}
                                         </div>
