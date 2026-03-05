@@ -1,0 +1,1 @@
+export const API_URL = 'https://motogp-betting.onrender.com/api';
