@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { API_URL } from '../config';    
-
+import { API_URL } from '../config';
+ 
 
 const Auth = ({ onLogin }: { onLogin?: (user: any) => void }) => {
     const [mode, setMode] = useState<'login' | 'register'>('login');
